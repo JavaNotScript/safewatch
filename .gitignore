@@ -1,0 +1,68 @@
+HELP.md
+target/
+.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+# Secrets
+
+# Secrets
+.env
+.env.*
+src/main/resources/application.properties
+src/main/resources/application-*.properties
+
+# Build artifacts
+target/
+**/target/
+*.jar
+app.jar
+
+# BFG leftovers
+..bfg-report/
+
+# OS junk
+*.log
+
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+# Spring
+/src/main/resources/application.properties
+/src/main/resources/application-*.properties
+
+# IntelliJ
+.idea/
+
+# Build
+/target/
+
+
+# local documentation notes
+*.md
+!README.md
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### VS Code ###
+.vscode/
+
