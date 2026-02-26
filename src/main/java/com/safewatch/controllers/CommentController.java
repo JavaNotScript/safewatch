@@ -19,7 +19,6 @@ import org.springframework.web.bind.annotation.*;
 public class CommentController {
     private final CommentService service;
 
-
     private long extractId(Authentication authentication) {
         if (authentication == null || !authentication.isAuthenticated()) {
             throw new AccessDeniedException("Unauthenticated");

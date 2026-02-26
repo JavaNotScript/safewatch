@@ -1,5 +1,6 @@
 package com.safewatch.services;
 
+import com.safewatch.DTOs.CommentDTO;
 import com.safewatch.DTOs.IncidentDTO;
 import com.safewatch.exceptions.ConcurrentUpdateException;
 import com.safewatch.exceptions.IncidentNotFoundException;
@@ -7,6 +8,7 @@ import com.safewatch.models.Incident;
 import com.safewatch.models.RoleType;
 import com.safewatch.models.Status;
 import com.safewatch.models.User;
+import com.safewatch.repositories.CommentRepository;
 import com.safewatch.repositories.CurrentUserRepository;
 import com.safewatch.repositories.IncidentRepository;
 import com.safewatch.util.HelperUtility;
@@ -31,6 +33,7 @@ import java.time.LocalDateTime;
 public class IncidentModerationService implements IncidentModerationPolicy {
     private final IncidentRepository incidentRepository;
     private final CurrentUserRepository userRepository;
+    private final CommentRepository commentRepository;
     private final Logger logger = LoggerFactory.getLogger(IncidentModerationService.class);
 
     private String mask(String email) {
@@ -45,6 +48,9 @@ public class IncidentModerationService implements IncidentModerationPolicy {
         return HelperUtility.convertToDTO(incidentRepository.findById(incidentId).orElseThrow(() -> new IncidentNotFoundException("Incident with id: " + incidentId + " not found")));
     }
 
+    public Page<IncidentDTO> getDeletedIncidents(Pageable pageable) {
+        return incidentRepository.getDeletedAtIncidents(pageable).map(HelperUtility::convertToDTO);
+    }
     public String deleteReportById(String adminEmail, Long reportId) {
         logger.info("Attempting to delete incident report, reportID={}, adminEmail={}", reportId, mask(adminEmail));
         User admin = userRepository.findByEmail(adminEmail).orElseThrow();
@@ -115,6 +121,11 @@ public class IncidentModerationService implements IncidentModerationPolicy {
         }
     }
 
+    public Page<CommentDTO> getCommentByIncidentID(Long incidentId,Pageable pageable) {
+        return commentRepository.findAllByIncident(incidentId,pageable).map(HelperUtility::convertToDTO);
+    }
 
-
+    public CommentDTO getCommentByIdAndIncidentId(Long incidentId, Long commentId) {
+        return HelperUtility.convertToDTO(commentRepository.findByCommentIdAndIncidentId(incidentId,commentId));
+    }
 }

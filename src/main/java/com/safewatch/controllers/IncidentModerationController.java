@@ -1,5 +1,6 @@
 package com.safewatch.controllers;
 
+import com.safewatch.DTOs.CommentDTO;
 import com.safewatch.DTOs.IncidentDTO;
 import com.safewatch.security.UserPrincipal;
 import com.safewatch.services.IncidentModerationService;
@@ -45,6 +46,12 @@ public class IncidentModerationController {
         return ResponseEntity.ok(incidentModerationService.getIncidentByIncidentId(incidentId));
     }
 
+    @GetMapping("/get/deleted")
+    public ResponseEntity<Page<IncidentDTO>> getDeletedIncidents(@RequestParam(defaultValue = "0")int pageNumber,@RequestParam(defaultValue = "10") int pageSize) {
+        Pageable pageable = PageRequest.of(pageNumber,pageSize, Sort.by("reportedAt").ascending());
+        return ResponseEntity.ok(incidentModerationService.getDeletedIncidents(pageable));
+    }
+
     @PostMapping("/{reportId}/verify")
     public ResponseEntity<IncidentDTO> verifyIncident(Authentication authentication, @PathVariable Long reportId) {
         String adminEmail = extractEmail(authentication);
@@ -54,6 +61,17 @@ public class IncidentModerationController {
         );
 
         return ResponseEntity.ok(incidentModerationService.verifyIncident(adminEmail, reportId));
+    }
+
+    @GetMapping("/comment/get/{incidentId}")
+    public ResponseEntity<Page<CommentDTO>> getCommentByIncidentId(@PathVariable Long incidentId, @RequestParam(defaultValue = "0")int pageNumber,@RequestParam(defaultValue = "10") int pageSize) {
+        Pageable pageable = PageRequest.of(pageNumber,pageSize,Sort.by("createdAt").ascending());
+        return ResponseEntity.ok(incidentModerationService.getCommentByIncidentID(incidentId,pageable));
+    }
+
+    @GetMapping("/comment/get/{incidentId}/{commentId}")
+    public ResponseEntity<CommentDTO> getCommentByIdAndIncidentId(@PathVariable Long incidentId,@PathVariable Long commentId){
+        return ResponseEntity.ok(incidentModerationService.getCommentByIdAndIncidentId(incidentId,commentId));
     }
 
     @PostMapping("/{reportId}/publish")

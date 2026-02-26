@@ -38,7 +38,7 @@ public class SecurityConfiguration {
                 .httpBasic(Customizer.withDefaults())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(requests -> {
-                    requests.requestMatchers("/api/login", "/api/refresh", "/api/register", "/api/verify").permitAll()
+                    requests.requestMatchers("/api/login", "/api/refresh", "/api/register", "/api/verify","/api/forgot/password").permitAll()
                             .requestMatchers("/api/admin/*").hasAuthority("ROLE_ADMIN")
                             .requestMatchers("/api/incident/*").authenticated()
                             .anyRequest().authenticated();

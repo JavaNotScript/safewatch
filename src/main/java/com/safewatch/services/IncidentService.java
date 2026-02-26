@@ -38,13 +38,13 @@ public class IncidentService {
         logger.info("Attempting to retrieve all incident reports");
 
         Pageable pageable = PageRequest.of(0, 10, Sort.by("reportedAt").ascending());
-        return incidentRepository.findAllVisibleReports(pageable).map(HelperUtility::convertToDTO);
+        return incidentRepository.findAllVisibleReports(Status.PUBLISHED,pageable).map(HelperUtility::convertToDTO);
     }
 
     public IncidentDTO getReportById(Long incidentId) {
         logger.info("Attempting to retrieve incident report incidentId={} ,", incidentId);
 
-        Incident incident = incidentRepository.findVisibleReportById(incidentId).orElseThrow(() -> new IncidentNotFoundException("Incident not found"));
+        Incident incident = incidentRepository.findVisibleReportById(incidentId,Status.PUBLISHED).orElseThrow(() -> new IncidentNotFoundException("Incident not found"));
 
         return HelperUtility.convertToDTO(incident);
     }
@@ -64,11 +64,11 @@ public class IncidentService {
         }
 
         return incidentRepository
-                .findByIncidentCategoryAndDeletedAtIsNull(categoryEnum, pageable)
+                .findByIncidentCategoryAndStatusAndDeletedAtIsNull(categoryEnum, Status.PUBLISHED,pageable)
                 .map(HelperUtility::convertToDTO);
     }
 
-    public Page<IncidentDTO> filterByStatus(String status, int page, int size) {
+    public Page<IncidentDTO> filterByStatus(Long userId, String status, int page, int size) {
         logger.info("Filtering incident report by status. status={}", status);
         Pageable pageable = PageRequest.of(page, size, Sort.by("reportedAt").ascending());
 
@@ -80,7 +80,7 @@ public class IncidentService {
             throw new IllegalArgumentException("No such status of type " + status);
         }
 
-        return incidentRepository.findByStatusAndDeletedAtIsNull(statusEnum, pageable).map(HelperUtility::convertToDTO);
+        return incidentRepository.findByReportedByUserIdAndDeletedAtIsNull(userId,statusEnum, pageable).map(HelperUtility::convertToDTO);
     }
 
     public Page<IncidentDTO> filterBySeverity(String severity, int page, int size) {
@@ -95,7 +95,7 @@ public class IncidentService {
             throw new IllegalArgumentException("No such severity of type " + severity);
         }
 
-        return incidentRepository.findBySeverityAndDeletedAtIsNull(severityEnum, pageable).map(HelperUtility::convertToDTO);
+        return incidentRepository.findBySeverityAndStatusAndDeletedAtIsNull(severityEnum,Status.PUBLISHED, pageable).map(HelperUtility::convertToDTO);
     }
 
     public Page<IncidentDTO> getMyReports(Long userId) {
@@ -181,6 +181,7 @@ public class IncidentService {
         incident.setDeletedAt(OffsetDateTime.now());
         incident.setDeletedBy(userId);
         incident.setDeletedReason(reason);
+        incident.setStatus(Status.DELETED);
 
         logger.info("deleted_By={} deleted_Reason={}", incident.getDeletedBy(), reason);
 

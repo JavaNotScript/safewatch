@@ -137,12 +137,12 @@ public class UserController {
     }
 
     @PostMapping("/forgot/password")
-    public ResponseEntity<?> forgotPassword(@RequestParam @Valid ResetPasswordRequest passwordRequest) {
+    public ResponseEntity<?> forgotPassword(@RequestBody @Valid ResetPasswordRequest passwordRequest) {
         userService.RequestPasswordReset(passwordRequest.email());
         return ResponseEntity.ok().build();
     }
 
-    @PutMapping
+    @PutMapping("/verify")
     public ResponseEntity<?> resetPassword(@RequestBody @Valid PasswordResetRequest resetRequest) {
         userService.passwordReset(resetRequest.token(), resetRequest.newPassword(), resetRequest.confirmPassword());
         return ResponseEntity.ok().build();

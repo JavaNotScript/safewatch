@@ -50,21 +50,20 @@ public class IncidentController {
         return ResponseEntity.ok(service.getReportById(incidentId));
     }
 
-
-    @GetMapping("get/me")
+    @GetMapping("/me/get/all")
     public ResponseEntity<Page<IncidentDTO>> getMyReports(Authentication authentication) {
         Long userId = extractId(authentication);
         return ResponseEntity.ok(service.getMyReports(userId));
     }
 
+    @GetMapping("/me/get/status")
+    public ResponseEntity<Page<IncidentDTO>> filterByStatus(Authentication authentication,@RequestParam String status, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
+        Long userId = extractId(authentication);
+        return ResponseEntity.ok(service.filterByStatus(userId,status, page, size));
+    }
     @GetMapping("/get/category")
     public ResponseEntity<Page<IncidentDTO>> filterByCategory(@RequestParam String category, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
         return ResponseEntity.ok(service.filterByCategory(category, page, size));
-    }
-
-    @GetMapping("/get/status")
-    public ResponseEntity<Page<IncidentDTO>> filterByStatus(@RequestParam String status, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
-        return ResponseEntity.ok(service.filterByStatus(status, page, size));
     }
 
     @GetMapping("/get/severity")
@@ -85,7 +84,7 @@ public class IncidentController {
     }
 
     @DeleteMapping("/delete/{reportId}")
-    public ResponseEntity<Void> deleteReportById(Authentication authentication, @PathVariable Long reportId, @RequestParam(required = false) String reason) {
+    public ResponseEntity<Void> deleteReportById(Authentication authentication, @PathVariable Long reportId, @RequestBody(required = false) String reason) {
         Long userId = extractId(authentication);
         service.deleteIncident(userId, reportId, reason);
         return ResponseEntity.ok().build();

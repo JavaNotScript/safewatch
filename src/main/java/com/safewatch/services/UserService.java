@@ -250,6 +250,10 @@ public class UserService {
             throw new BadCredentialsException("Current password is incorrect");
         }
 
+        if (passwordEncoder.matches(updateRequest.confirmPassword(), user.getPassword())) {
+            throw new BadCredentialsException("Old password cannot be same as new password.");
+        }
+
         if (!updateRequest.newPassword().equals(updateRequest.confirmPassword())) {
             logger.info("Updating password failed, Passwords do not match {} ", mask(email));
 
@@ -299,11 +303,9 @@ public class UserService {
     public void passwordReset(String token, String newPassword, String confirmPassword) {
         VerificationToken verificationToken = verificationTokenRepo.findByTokenHash(hashingService.hash(token)).orElseThrow(() -> new RuntimeException("Token invalid/used."));
 
-
         if (verificationToken.isUsed() || verificationToken.getExpiresAt().isBefore(OffsetDateTime.now())) {
             throw new RuntimeException("Token used/expired");
         }
-
 
         User user = verificationToken.getUser();
 
@@ -311,10 +313,13 @@ public class UserService {
             throw new RuntimeException("Invalid token type");
         }
 
-
         verificationTokenRepo.invalidateActiveTokens(user, TokenType.RESET_PASSWORD);
         verificationToken.setUsed(true);
         verificationToken.setUsedAt(LocalDateTime.now());
+
+        if (passwordEncoder.matches(confirmPassword, user.getPassword())) {
+            throw new BadCredentialsException("Old password cannot be same as new password.");
+        }
 
         if (!newPassword.equals(confirmPassword)) {
             logger.info("Updating password failed, Passwords do not match. {} ", mask(user.getEmail()));

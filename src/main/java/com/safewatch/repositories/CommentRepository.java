@@ -3,9 +3,11 @@ package com.safewatch.repositories;
 import com.safewatch.models.Comment;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Range;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.security.core.parameters.P;
 
 public interface CommentRepository extends JpaRepository<Comment, Long> {
 
@@ -29,4 +31,7 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
             "SELECT c FROM Comment c WHERE c.incident.incidentId = :incidentId AND c.commentId = :commentId AND c.isDeleted = false AND c.incident.deletedAt IS NULL"
     )
     Comment findVisibleCommentByCommentId(Long commentId,Long incidentId);
+
+    @Query("SELECT c FROM Comment c WHERE c.incident.incidentId = :incidentId AND c.commentId = :commentId")
+    Comment findByCommentIdAndIncidentId(@Param("incidentId") Long incidentId, @Param("commentId") Long commentId);
 }
