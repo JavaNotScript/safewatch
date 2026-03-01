@@ -1,11 +1,14 @@
 package com.safewatch.services;
 
 import com.safewatch.DTOs.IncidentDTO;
+import com.safewatch.DTOs.IncidentDetailsDTO;
+import com.safewatch.DTOs.MediaDTO;
 import com.safewatch.exceptions.IncidentNotFoundException;
 import com.safewatch.exceptions.InvalidIncidentException;
 import com.safewatch.models.*;
 import com.safewatch.repositories.CurrentUserRepository;
 import com.safewatch.repositories.IncidentRepository;
+import com.safewatch.repositories.MediaRepository;
 import com.safewatch.util.HelperUtility;
 import com.safewatch.util.reportRelated.ReportRequest;
 import jakarta.transaction.Transactional;
@@ -18,9 +21,13 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
+import java.util.List;
+import java.util.UUID;
 
 @Service
 @Transactional
@@ -28,6 +35,7 @@ import java.time.OffsetDateTime;
 public class IncidentService {
     private final IncidentRepository incidentRepository;
     private final CurrentUserRepository userRepository;
+    private final MediaRepository mediaRepo;
     private final Logger logger = LoggerFactory.getLogger(IncidentService.class);
 
     private String mask(String email) {
@@ -38,15 +46,16 @@ public class IncidentService {
         logger.info("Attempting to retrieve all incident reports");
 
         Pageable pageable = PageRequest.of(0, 10, Sort.by("reportedAt").ascending());
-        return incidentRepository.findAllVisibleReports(Status.PUBLISHED,pageable).map(HelperUtility::convertToDTO);
+        return incidentRepository.findAllVisibleReports(Status.PUBLISHED, pageable).map(HelperUtility::convertToDTO);
     }
 
-    public IncidentDTO getReportById(Long incidentId) {
+    public IncidentDetailsDTO getReportById(Long incidentId) {
         logger.info("Attempting to retrieve incident report incidentId={} ,", incidentId);
 
-        Incident incident = incidentRepository.findVisibleReportById(incidentId,Status.PUBLISHED).orElseThrow(() -> new IncidentNotFoundException("Incident not found"));
+        Incident incident = incidentRepository.findVisibleReportById(incidentId, Status.PUBLISHED).orElseThrow(() -> new IncidentNotFoundException("Incident not found"));
+        List<Media> media = mediaRepo.findByIncidentIncidentIdAndDeletedAtIsNull(incidentId);
 
-        return HelperUtility.convertToDTO(incident);
+        return HelperUtility.convertToDTO(incident,media);
     }
 
     public Page<IncidentDTO> filterByCategory(String category, int page, int size) {
@@ -64,7 +73,7 @@ public class IncidentService {
         }
 
         return incidentRepository
-                .findByIncidentCategoryAndStatusAndDeletedAtIsNull(categoryEnum, Status.PUBLISHED,pageable)
+                .findByIncidentCategoryAndStatusAndDeletedAtIsNull(categoryEnum, Status.PUBLISHED, pageable)
                 .map(HelperUtility::convertToDTO);
     }
 
@@ -80,7 +89,7 @@ public class IncidentService {
             throw new IllegalArgumentException("No such status of type " + status);
         }
 
-        return incidentRepository.findByReportedByUserIdAndDeletedAtIsNull(userId,statusEnum, pageable).map(HelperUtility::convertToDTO);
+        return incidentRepository.findByReportedByUserIdAndDeletedAtIsNull(userId, statusEnum, pageable).map(HelperUtility::convertToDTO);
     }
 
     public Page<IncidentDTO> filterBySeverity(String severity, int page, int size) {
@@ -95,16 +104,16 @@ public class IncidentService {
             throw new IllegalArgumentException("No such severity of type " + severity);
         }
 
-        return incidentRepository.findBySeverityAndStatusAndDeletedAtIsNull(severityEnum,Status.PUBLISHED, pageable).map(HelperUtility::convertToDTO);
+        return incidentRepository.findBySeverityAndStatusAndDeletedAtIsNull(severityEnum, Status.PUBLISHED, pageable).map(HelperUtility::convertToDTO);
     }
 
     public Page<IncidentDTO> getMyReports(Long userId) {
         Pageable pageable = PageRequest.of(0, 10, Sort.by("reportedAt").ascending());
 
-        return incidentRepository.getMyVisibleReports(userId,pageable).map(HelperUtility::convertToDTO);
+        return incidentRepository.getMyVisibleReports(userId, pageable).map(HelperUtility::convertToDTO);
     }
 
-    public IncidentDTO reportIncident(String email, ReportRequest request) {
+    public IncidentDetailsDTO reportIncident(String email, ReportRequest request, List<MultipartFile> images) {
         logger.info("Reporting incident: user={}, severity={}, category={}",
                 mask(email), request.getSeverity(), request.getIncidentCategory());
 
@@ -118,7 +127,6 @@ public class IncidentService {
             severityEnum = Severity.valueOf(request.getSeverity().toUpperCase());
             category = IncidentCategory.valueOf(request.getIncidentCategory().toUpperCase());
 
-            logger.warn("Report unsuccessful: user={}invalid severity={}, category={} ", mask(email), request.getSeverity(), request.getIncidentCategory());
         } catch (IllegalArgumentException e) {
             logger.error("Failed to parse enums for incident report by user={}", mask(email), e);
             throw new InvalidIncidentException("Invalid severity or category");
@@ -137,10 +145,62 @@ public class IncidentService {
         incident.setDescription(request.getDescription().trim());
         incident.setReportedBy(user);
 
-        incidentRepository.save(incident);
+        Incident savedIncident = incidentRepository.save(incident);
+
+        if (images != null && !images.isEmpty()) {
+            if (images.size() > 5) throw new InvalidIncidentException("Max 5 images allowed");
+
+            for (MultipartFile file : images) {
+                if (file.isEmpty()) continue;
+
+                String contentType = file.getContentType();
+
+                if (contentType == null || !(contentType.equals("image/jpeg") || contentType.equals("image/png") || contentType.equals("image/webp"))) {
+                    throw new InvalidIncidentException("Only JPG,PNG,WEBP allowed.");
+                }
+
+                if (file.getSize() > 3_000_000) {
+                    throw new InvalidIncidentException("Max image size allowed is 3MB");
+                }
+
+                String extension = switch (contentType) {
+                    case "image/jpeg" -> ".jpg";
+                    case "image/png" -> ".png";
+                    case "image/webp" -> ".webp";
+                    default -> "";
+                };
+
+                String fileName = UUID.randomUUID() + extension;
+                String storageKey = "incident/" + savedIncident.getIncidentId() + "/" + fileName;
+
+                java.nio.file.Path root = Paths.get("uploads").toAbsolutePath().normalize();
+                java.nio.file.Path target = root.resolve(storageKey).normalize();
+
+                if (!target.startsWith(root)) throw new SecurityException("Invalid path");
+
+                try {
+                    java.nio.file.Files.createDirectories(target.getParent());
+                    file.transferTo(target);
+                } catch (Exception e) {
+                    throw new RuntimeException("Failed to store image", e);
+                }
+
+                Media media = new Media();
+                media.setOwner(user);
+                media.setIncident(savedIncident);
+                media.setStorageKey(storageKey);
+                media.setOriginalFilename(file.getOriginalFilename());
+                media.setContentType(contentType);
+                media.setSizeBytes(file.getSize());
+
+                mediaRepo.save(media);
+            }
+        }
+
+        List<Media> media = mediaRepo.findByIncidentAndDeletedAtIsNull(savedIncident);
 
         logger.info("Report created: id={}, user={}, status={}", incident.getIncidentId(), mask(email), incident.getStatus());
-        return HelperUtility.convertToDTO(incident);
+        return HelperUtility.convertToDTO(savedIncident,media);
     }
 
     public IncidentDTO updateReport(String email, Long reportId, ReportRequest request) {
@@ -176,7 +236,8 @@ public class IncidentService {
 
         Incident incident = incidentRepository.findById(incidentId).orElseThrow(() -> new IncidentNotFoundException("Incident with id " + incidentId + " not found"));
 
-        if (incident.getDeletedAt() != null) throw new InvalidIncidentException("Incident with id " + incidentId + " does not exist.");
+        if (incident.getDeletedAt() != null)
+            throw new InvalidIncidentException("Incident with id " + incidentId + " does not exist.");
 
         incident.setDeletedAt(OffsetDateTime.now());
         incident.setDeletedBy(userId);

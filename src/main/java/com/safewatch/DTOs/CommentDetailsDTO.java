@@ -1,4 +1,14 @@
 package com.safewatch.DTOs;
 
-public class CommentDetailsDTO {
+import java.time.OffsetDateTime;
+import java.util.List;
+
+public record CommentDetailsDTO(
+        Long commentId,
+        String comment,
+        Long userId,
+        Long incidentId,
+        OffsetDateTime createAt,
+        List<MediaDTO> media
+) {
 }

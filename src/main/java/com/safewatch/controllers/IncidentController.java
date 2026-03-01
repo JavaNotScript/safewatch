@@ -1,15 +1,20 @@
 package com.safewatch.controllers;
 
 import com.safewatch.DTOs.IncidentDTO;
+import com.safewatch.DTOs.IncidentDetailsDTO;
 import com.safewatch.security.UserPrincipal;
 import com.safewatch.services.IncidentService;
 import com.safewatch.util.reportRelated.ReportRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 @SuppressWarnings("ALL")
 @RestController
@@ -46,7 +51,7 @@ public class IncidentController {
     }
 
     @GetMapping("/get/{incidentId}")
-    public ResponseEntity<IncidentDTO> getReportById(@PathVariable Long incidentId) {
+    public ResponseEntity<IncidentDetailsDTO> getReportById(@PathVariable Long incidentId) {
         return ResponseEntity.ok(service.getReportById(incidentId));
     }
 
@@ -71,10 +76,10 @@ public class IncidentController {
         return ResponseEntity.ok(service.filterBySeverity(severity, page, size));
     }
 
-    @PostMapping("/report")
-    public ResponseEntity<IncidentDTO> reportIncident(Authentication authentication, @RequestBody ReportRequest request) {
+    @PostMapping(value = "/report",consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<IncidentDetailsDTO> reportIncident(Authentication authentication, @RequestBody ReportRequest request, @RequestPart(value = "images",required = false)List<MultipartFile> images) {
         String email = extractEmail(authentication);
-        return ResponseEntity.ok(service.reportIncident(email, request));
+        return ResponseEntity.ok(service.reportIncident(email, request,images));
     }
 
     @PutMapping("/update/{reportId}")

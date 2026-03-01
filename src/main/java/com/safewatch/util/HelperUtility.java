@@ -1,23 +1,11 @@
 package com.safewatch.util;
 
-import com.safewatch.DTOs.CommentDTO;
-import com.safewatch.DTOs.CurrentUserDTO;
-import com.safewatch.DTOs.IncidentDTO;
+import com.safewatch.DTOs.*;
 import com.safewatch.exceptions.InvalidIncidentException;
-import com.safewatch.models.Comment;
-import com.safewatch.models.Incident;
-import com.safewatch.models.Severity;
-import com.safewatch.models.User;
-import com.safewatch.repositories.CurrentUserRepository;
-import com.safewatch.repositories.VerificationTokenRepository;
-import com.safewatch.services.TokenHashingService;
+import com.safewatch.models.*;
 import com.safewatch.util.reportRelated.ReportRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.ResponseCookie;
 
 import java.security.SecureRandom;
-import java.time.Duration;
 import java.util.Base64;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -25,31 +13,11 @@ import java.util.stream.Collectors;
 public class HelperUtility {
     private final static SecureRandom random = new SecureRandom();
 
+
     public static String generateRefreshToken() {
         byte[] bytes = new byte[64];
         random.nextBytes(bytes);
         return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
-    }
-
-    public static void setRefreshToken(HttpServletResponse response, String token) {
-        ResponseCookie goodCookie = ResponseCookie.from("refreshToken", token)
-                .httpOnly(true)
-                .secure(false)
-                .sameSite("Lax")
-                .path("/api/refresh")
-                .maxAge(Duration.ofDays(30))
-                .build();
-
-        ResponseCookie legacyCookie = ResponseCookie.from("refreshToken", "")
-                .httpOnly(true)
-                .secure(false)
-                .sameSite("Lax")
-                .path("/")
-                .maxAge(0)
-                .build();
-
-        response.addHeader(HttpHeaders.SET_COOKIE, goodCookie.toString());
-        response.addHeader(HttpHeaders.SET_COOKIE, legacyCookie.toString());
     }
 
     public static CurrentUserDTO convertToDTO(User user) {
@@ -63,18 +31,45 @@ public class HelperUtility {
 
     public static IncidentDTO convertToDTO(Incident incident) {
         return new IncidentDTO(
+                incident.getIncidentId(),
+                incident.getTitle(),
+                incident.getLocation(),
+                incident.getSeverity(),
+                incident.getIncidentCategory(),
+                incident.getStatus(),
+                incident.getVersion(),
+                incident.getReportedAt()
+        );
+    }
+
+    public static IncidentDetailsDTO convertToDTO(Incident incident, List<Media> media) {
+        return new IncidentDetailsDTO(
+                incident.getIncidentId(),
                 incident.getTitle(),
                 incident.getDescription(),
                 incident.getLocation(),
                 incident.getSeverity(),
                 incident.getIncidentCategory(),
                 incident.getStatus(),
-                incident.getVersion()
+                incident.getVersion(),
+                incident.getReportedAt(),
+                convertToDetailsDTO(media)
+
         );
     }
 
-    public static List<IncidentDTO> convertToDTO(List<Incident> incidentList) {
-        return incidentList.stream().map(HelperUtility::convertToDTO).collect(Collectors.toList());
+    public static MediaDTO convertToDTO(Media media) {
+        return new MediaDTO(
+                media.getMediaId(),
+                media.getOriginalFilename(),
+                media.getContentType(),
+                media.getSizeBytes(),
+                media.getCreatedAt()
+        );
+    }
+
+    public static List<MediaDTO> convertToDetailsDTO(List<Media> mediaList) {
+        return mediaList.stream().map(HelperUtility::convertToDTO).collect(Collectors.toList());
     }
 
     public static CommentDTO convertToDTO(Comment comment) {
@@ -83,6 +78,18 @@ public class HelperUtility {
                 comment.getUser().getUserId(),
                 comment.getComment(),
                 comment.getCreatedAt()
+        );
+    }
+
+    public static CommentDetailsDTO convertToDTO(Comment comment, List<Media> media) {
+        return new CommentDetailsDTO(
+                comment.getCommentId(),
+                comment.getComment(),
+                comment.getUser().getUserId(),
+                comment.getIncident().getIncidentId(),
+                comment.getCreatedAt(),
+                convertToDetailsDTO(media)
+
         );
     }
 

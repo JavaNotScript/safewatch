@@ -1,6 +1,7 @@
 package com.safewatch.controllers;
 
 import com.safewatch.DTOs.CommentDTO;
+import com.safewatch.DTOs.CommentDetailsDTO;
 import com.safewatch.security.UserPrincipal;
 import com.safewatch.services.CommentService;
 import com.safewatch.util.reportRelated.CommentRequest;
@@ -8,10 +9,14 @@ import com.safewatch.util.reportRelated.CommentResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -39,14 +44,14 @@ public class CommentController {
     }
 
     @GetMapping("/get/{commentId}/{incidentId}")
-    public ResponseEntity<CommentDTO> getCommentUnderIncidentById(@PathVariable("commentId") Long commentId, @PathVariable Long incidentId) {
+    public ResponseEntity<CommentDetailsDTO> getCommentUnderIncidentById(@PathVariable("commentId") Long commentId, @PathVariable Long incidentId) {
         return ResponseEntity.ok(service.getCommentUnderIncidentById(commentId,incidentId));
     }
 
-    @PostMapping("/{incidentId}")
-    public ResponseEntity<CommentResponse> makeComment(Authentication authentication, @Valid @RequestBody CommentRequest request, @PathVariable Long incidentId) {
+    @PostMapping(value = "/{incidentId},",consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<CommentDetailsDTO> makeComment(Authentication authentication, @Valid @RequestBody CommentRequest request, @RequestPart(required = false) List<MultipartFile> media, @PathVariable Long incidentId) {
         Long userId = extractId(authentication);
-        return ResponseEntity.ok(service.makeComment(userId, request, incidentId));
+        return ResponseEntity.ok(service.makeComment(userId, request,media ,incidentId));
     }
 
     @PutMapping("/update/{incidentId}/{commentId}")
