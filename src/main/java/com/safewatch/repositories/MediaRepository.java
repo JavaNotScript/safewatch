@@ -18,4 +18,15 @@ public interface MediaRepository extends JpaRepository<Media, UUID> {
     List<Media> findByCommentCommentIdAndDeletedAtIsNull(@Param("commentIds") List<Long> commentIds);
 
     List<Media> findByCommentCommentIdAndDeletedAtIsNull(Long commentId);
+
+    @Query("SELECT m FROM Media m WHERE m.incident.incidentId IN (:incidentIds)")
+    List<Media> findByIncidentIncidentId(@Param("incidentIds") List<Long> incidentIds);
+
+    List<Media> findByIncidentIncidentId(Long incidentId);
+
+    @Query("SELECT m FROM Media m WHERE m.comment.commentId = :commentId")
+    List<Media> findByCommentCommentId(@Param("commentId") Long commentId);
+
+    @Query("SELECT m FROM Media m WHERE m.comment.commentId IN (:commentIds)")
+    List<Media> findByCommentCommentId(@Param("commentIds") List<Long> commentIds);
 }

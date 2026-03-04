@@ -1,7 +1,9 @@
 package com.safewatch.controllers;
 
 import com.safewatch.DTOs.CommentDTO;
+import com.safewatch.DTOs.CommentDetailsDTO;
 import com.safewatch.DTOs.IncidentDTO;
+import com.safewatch.DTOs.IncidentDetailsDTO;
 import com.safewatch.security.UserPrincipal;
 import com.safewatch.services.IncidentModerationService;
 import lombok.RequiredArgsConstructor;
@@ -36,20 +38,30 @@ public class IncidentModerationController {
     }
 
     @GetMapping("/get-all")
-    public ResponseEntity<Page<IncidentDTO>> getAllIncidents(@RequestParam(defaultValue = "0") int pageNumber, @RequestParam(defaultValue = "10") int pageSize) {
+    public ResponseEntity<Page<IncidentDetailsDTO>> getAllIncidents(@RequestParam(defaultValue = "0") int pageNumber, @RequestParam(defaultValue = "10") int pageSize) {
         Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by("reportedAt").descending());
         return ResponseEntity.ok(incidentModerationService.getAllReports(pageable));
     }
 
     @GetMapping("/get/{incidentId}")
-    public ResponseEntity<IncidentDTO> getIncidentByIncidentId(@PathVariable("incidentId") Long incidentId) {
+    public ResponseEntity<IncidentDetailsDTO> getIncidentByIncidentId(@PathVariable("incidentId") Long incidentId) {
         return ResponseEntity.ok(incidentModerationService.getIncidentByIncidentId(incidentId));
     }
 
     @GetMapping("/get/deleted")
-    public ResponseEntity<Page<IncidentDTO>> getDeletedIncidents(@RequestParam(defaultValue = "0") int pageNumber, @RequestParam(defaultValue = "10") int pageSize) {
-        Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by("reportedAt").ascending());
+    public ResponseEntity<Page<IncidentDetailsDTO>> getDeletedIncidents(@RequestParam(defaultValue = "0") int pageNumber, @RequestParam(defaultValue = "10") int pageSize) {
+        Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by("reportedAt").descending());
         return ResponseEntity.ok(incidentModerationService.getDeletedIncidents(pageable));
+    }
+
+    @GetMapping("/{incidentId}/get/comments")
+    public ResponseEntity<Page<CommentDetailsDTO>> getCommentsUnderIncident(@PathVariable("incidentId") Long incidentId) {
+        return ResponseEntity.ok(incidentModerationService.getCommentsUnderIncident(incidentId));
+    }
+
+    @GetMapping("/comment/get/{commentId}")
+    public ResponseEntity<CommentDetailsDTO> getCommentByCommentId(@PathVariable Long commentId) {
+        return ResponseEntity.ok(incidentModerationService.getCommentByCommentId(commentId));
     }
 
     @PostMapping("/{reportId}/verify")
@@ -61,17 +73,6 @@ public class IncidentModerationController {
         );
 
         return ResponseEntity.ok(incidentModerationService.verifyIncident(adminEmail, reportId));
-    }
-
-    @GetMapping("/comment/get/{incidentId}")
-    public ResponseEntity<Page<CommentDTO>> getCommentByIncidentId(@PathVariable Long incidentId, @RequestParam(defaultValue = "0") int pageNumber, @RequestParam(defaultValue = "10") int pageSize) {
-        Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by("createdAt").ascending());
-        return ResponseEntity.ok(incidentModerationService.getCommentByIncidentID(incidentId, pageable));
-    }
-
-    @GetMapping("/comment/get/{incidentId}/{commentId}")
-    public ResponseEntity<CommentDTO> getCommentByIdAndIncidentId(@PathVariable Long incidentId, @PathVariable Long commentId) {
-        return ResponseEntity.ok(incidentModerationService.getCommentByIdAndIncidentId(incidentId, commentId));
     }
 
     @PostMapping("/{reportId}/publish")
