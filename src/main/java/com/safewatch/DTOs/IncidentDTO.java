@@ -6,8 +6,6 @@ import com.safewatch.models.Severity;
 import com.safewatch.models.Status;
 
 import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
-import java.util.List;
 
 public record IncidentDTO(
         Long incidentId,
@@ -19,7 +17,7 @@ public record IncidentDTO(
         long version,
         LocalDateTime reportedAt) {
     public static IncidentDTO from(Incident i) {
-        return new IncidentDTO(i.getIncidentId(),i.getTitle(), i.getLocation(), i.getSeverity(), i.getIncidentCategory(), i.getStatus(), i.getVersion(),i.getReportedAt());
+        return new IncidentDTO(i.getIncidentId(), i.getTitle(), i.getLocation(), i.getSeverity(), i.getIncidentCategory(), i.getStatus(), i.getVersion(), i.getReportedAt());
     }
 
 }

@@ -53,7 +53,7 @@ public class HelperUtility {
                 incident.getStatus(),
                 incident.getVersion(),
                 incident.getReportedAt(),
-                convertToDetailsDTO(media)
+                convertToMediaDTO(media)
 
         );
     }
@@ -68,7 +68,7 @@ public class HelperUtility {
         );
     }
 
-    public static List<MediaDTO> convertToDetailsDTO(List<Media> mediaList) {
+    public static List<MediaDTO> convertToMediaDTO(List<Media> mediaList) {
         return mediaList.stream().map(HelperUtility::convertToDTO).collect(Collectors.toList());
     }
 
@@ -88,7 +88,7 @@ public class HelperUtility {
                 comment.getUser().getUserId(),
                 comment.getIncident().getIncidentId(),
                 comment.getCreatedAt(),
-                convertToDetailsDTO(media)
+                convertToMediaDTO(media)
 
         );
     }

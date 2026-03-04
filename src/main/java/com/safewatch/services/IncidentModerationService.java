@@ -51,6 +51,7 @@ public class IncidentModerationService implements IncidentModerationPolicy {
     public Page<IncidentDTO> getDeletedIncidents(Pageable pageable) {
         return incidentRepository.getDeletedAtIncidents(pageable).map(HelperUtility::convertToDTO);
     }
+
     public String deleteReportById(String adminEmail, Long reportId) {
         logger.info("Attempting to delete incident report, reportID={}, adminEmail={}", reportId, mask(adminEmail));
         User admin = userRepository.findByEmail(adminEmail).orElseThrow();
@@ -121,11 +122,11 @@ public class IncidentModerationService implements IncidentModerationPolicy {
         }
     }
 
-    public Page<CommentDTO> getCommentByIncidentID(Long incidentId,Pageable pageable) {
-        return commentRepository.findAllByIncident(incidentId,pageable).map(HelperUtility::convertToDTO);
+    public Page<CommentDTO> getCommentByIncidentID(Long incidentId, Pageable pageable) {
+        return commentRepository.findAllByIncident(incidentId, pageable).map(HelperUtility::convertToDTO);
     }
 
     public CommentDTO getCommentByIdAndIncidentId(Long incidentId, Long commentId) {
-        return HelperUtility.convertToDTO(commentRepository.findByCommentIdAndIncidentId(incidentId,commentId));
+        return HelperUtility.convertToDTO(commentRepository.findByCommentIdAndIncidentId(incidentId, commentId));
     }
 }

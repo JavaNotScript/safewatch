@@ -1,5 +1,5 @@
 package com.safewatch.models;
 
 public enum Status {
-    PENDING, VERIFIED, PUBLISHED, REJECTED, FLAGGED,DELETED
+    PENDING, VERIFIED, PUBLISHED, REJECTED, FLAGGED, DELETED
 }

@@ -47,8 +47,8 @@ public class IncidentModerationController {
     }
 
     @GetMapping("/get/deleted")
-    public ResponseEntity<Page<IncidentDTO>> getDeletedIncidents(@RequestParam(defaultValue = "0")int pageNumber,@RequestParam(defaultValue = "10") int pageSize) {
-        Pageable pageable = PageRequest.of(pageNumber,pageSize, Sort.by("reportedAt").ascending());
+    public ResponseEntity<Page<IncidentDTO>> getDeletedIncidents(@RequestParam(defaultValue = "0") int pageNumber, @RequestParam(defaultValue = "10") int pageSize) {
+        Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by("reportedAt").ascending());
         return ResponseEntity.ok(incidentModerationService.getDeletedIncidents(pageable));
     }
 
@@ -64,14 +64,14 @@ public class IncidentModerationController {
     }
 
     @GetMapping("/comment/get/{incidentId}")
-    public ResponseEntity<Page<CommentDTO>> getCommentByIncidentId(@PathVariable Long incidentId, @RequestParam(defaultValue = "0")int pageNumber,@RequestParam(defaultValue = "10") int pageSize) {
-        Pageable pageable = PageRequest.of(pageNumber,pageSize,Sort.by("createdAt").ascending());
-        return ResponseEntity.ok(incidentModerationService.getCommentByIncidentID(incidentId,pageable));
+    public ResponseEntity<Page<CommentDTO>> getCommentByIncidentId(@PathVariable Long incidentId, @RequestParam(defaultValue = "0") int pageNumber, @RequestParam(defaultValue = "10") int pageSize) {
+        Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by("createdAt").ascending());
+        return ResponseEntity.ok(incidentModerationService.getCommentByIncidentID(incidentId, pageable));
     }
 
     @GetMapping("/comment/get/{incidentId}/{commentId}")
-    public ResponseEntity<CommentDTO> getCommentByIdAndIncidentId(@PathVariable Long incidentId,@PathVariable Long commentId){
-        return ResponseEntity.ok(incidentModerationService.getCommentByIdAndIncidentId(incidentId,commentId));
+    public ResponseEntity<CommentDTO> getCommentByIdAndIncidentId(@PathVariable Long incidentId, @PathVariable Long commentId) {
+        return ResponseEntity.ok(incidentModerationService.getCommentByIdAndIncidentId(incidentId, commentId));
     }
 
     @PostMapping("/{reportId}/publish")

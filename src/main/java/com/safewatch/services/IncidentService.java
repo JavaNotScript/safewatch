@@ -1,6 +1,5 @@
 package com.safewatch.services;
 
-import com.safewatch.DTOs.IncidentDTO;
 import com.safewatch.DTOs.IncidentDetailsDTO;
 import com.safewatch.DTOs.MediaDTO;
 import com.safewatch.exceptions.IncidentNotFoundException;
@@ -15,19 +14,20 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.*;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -38,30 +38,43 @@ public class IncidentService {
     private final MediaRepository mediaRepo;
     private final Logger logger = LoggerFactory.getLogger(IncidentService.class);
 
-    private String mask(String email) {
-        return email.replaceAll("(^.).*(@.*$)", "$1***$2");
-    }
-
-    public Page<IncidentDTO> getAllReports() {
+    public Page<IncidentDetailsDTO> getAllReports() {
         logger.info("Attempting to retrieve all incident reports");
 
         Pageable pageable = PageRequest.of(0, 10, Sort.by("reportedAt").ascending());
-        return incidentRepository.findAllVisibleReports(Status.PUBLISHED, pageable).map(HelperUtility::convertToDTO);
+
+        Page<Incident> incidentPage = incidentRepository.findAllVisibleReports(Status.PUBLISHED, pageable);
+
+        List<Incident> incidentList = incidentPage.getContent();
+
+        if (incidentList.isEmpty()) {
+            return new PageImpl<>(List.of(), pageable, incidentPage.getTotalElements());
+        }
+
+        List<Long> incidentIds = incidentList.stream().map(Incident::getIncidentId).toList();
+
+        List<Media> mediaList = mediaRepo.findByIncidentIncidentIdAndDeletedAtIsNull(incidentIds);
+
+        Map<Long, List<Media>> mediaMap = mediaList.stream().collect(Collectors.groupingBy(m -> m.getIncident().getIncidentId()));
+
+        List<IncidentDetailsDTO> incidentDetailsDTOList = incidentList.stream().map(i -> HelperUtility.convertToDTO(i, mediaMap.getOrDefault(i.getIncidentId(), List.of()))).toList();
+
+        return new PageImpl<>(incidentDetailsDTOList, pageable, incidentPage.getTotalElements());
     }
 
     public IncidentDetailsDTO getReportById(Long incidentId) {
         logger.info("Attempting to retrieve incident report incidentId={} ,", incidentId);
 
         Incident incident = incidentRepository.findVisibleReportById(incidentId, Status.PUBLISHED).orElseThrow(() -> new IncidentNotFoundException("Incident not found"));
-        List<Media> media = mediaRepo.findByIncidentIncidentIdAndDeletedAtIsNull(incidentId);
+        List<Media> media = mediaRepo.getByIncidentIncidentIdAndDeletedAtIsNull(incidentId);
 
-        return HelperUtility.convertToDTO(incident,media);
+        return HelperUtility.convertToDTO(incident, media);
     }
 
-    public Page<IncidentDTO> filterByCategory(String category, int page, int size) {
+    public Page<IncidentDetailsDTO> filterByCategory(String category, int page, int size) {
         logger.info("Filtering incident report by category, category={}", category);
 
-        Pageable pageable = PageRequest.of(page, size, Sort.by("reportedAt").ascending());
+        Pageable pageable = PageRequest.of(page, size, Sort.by("reportedAt").descending());
 
         IncidentCategory categoryEnum;
 
@@ -72,27 +85,29 @@ public class IncidentService {
             throw new IllegalStateException("No such category of type : " + category);
         }
 
-        return incidentRepository
-                .findByIncidentCategoryAndStatusAndDeletedAtIsNull(categoryEnum, Status.PUBLISHED, pageable)
-                .map(HelperUtility::convertToDTO);
-    }
+        Page<Incident> filteredIncident = incidentRepository.findByIncidentCategoryAndStatusAndDeletedAtIsNull(categoryEnum, Status.PUBLISHED, pageable);
 
-    public Page<IncidentDTO> filterByStatus(Long userId, String status, int page, int size) {
-        logger.info("Filtering incident report by status. status={}", status);
-        Pageable pageable = PageRequest.of(page, size, Sort.by("reportedAt").ascending());
+        List<Incident> incidentList = filteredIncident.getContent();
 
-        Status statusEnum;
-        try {
-            statusEnum = Status.valueOf(status.toUpperCase());
-        } catch (IllegalArgumentException e) {
-            logger.error("Invalid severity enum, status={}", status, e);
-            throw new IllegalArgumentException("No such status of type " + status);
+        if (incidentList.isEmpty()) {
+            return new PageImpl<>(List.of(), pageable, filteredIncident.getTotalElements());
         }
 
-        return incidentRepository.findByReportedByUserIdAndDeletedAtIsNull(userId, statusEnum, pageable).map(HelperUtility::convertToDTO);
+        List<Long> incidentIds = incidentList.stream()
+                .map(Incident::getIncidentId)
+                .toList();
+
+        List<Media> mediaList = mediaRepo.findByIncidentIncidentIdAndDeletedAtIsNull(incidentIds);
+
+        Map<Long, List<Media>> mediaMap = mediaList.stream().collect(Collectors.groupingBy(m -> m.getIncident().getIncidentId()));
+
+        List<IncidentDetailsDTO> detailsDTOList = incidentList.stream().map(i -> HelperUtility.convertToDTO(i, mediaMap.getOrDefault(i.getIncidentId(), List.of()))).toList();
+
+        return new PageImpl<>(detailsDTOList, pageable, filteredIncident.getTotalElements());
+
     }
 
-    public Page<IncidentDTO> filterBySeverity(String severity, int page, int size) {
+    public Page<IncidentDetailsDTO> filterBySeverity(String severity, int page, int size) {
         logger.info("Filtering incident reports severity{}.", severity);
         Pageable pageable = PageRequest.of(page, size, Sort.by("reportedAt").ascending());
 
@@ -104,21 +119,88 @@ public class IncidentService {
             throw new IllegalArgumentException("No such severity of type " + severity);
         }
 
-        return incidentRepository.findBySeverityAndStatusAndDeletedAtIsNull(severityEnum, Status.PUBLISHED, pageable).map(HelperUtility::convertToDTO);
+        Page<Incident> filteredIncident = incidentRepository.findBySeverityAndStatusAndDeletedAtIsNull(severityEnum, Status.PUBLISHED, pageable);
+
+        List<Incident> incidentList = filteredIncident.getContent();
+
+        if (incidentList.isEmpty()) {
+            return new PageImpl<>(List.of(), pageable, filteredIncident.getTotalElements());
+        }
+
+        List<Long> incidentIds = incidentList.stream()
+                .map(Incident::getIncidentId)
+                .toList();
+
+        List<Media> mediaList = mediaRepo.findByIncidentIncidentIdAndDeletedAtIsNull(incidentIds);
+
+        Map<Long, List<Media>> mediaMap = mediaList.stream().collect(Collectors.groupingBy(m -> m.getIncident().getIncidentId()));
+
+        List<IncidentDetailsDTO> incidentDetailsDTOList = incidentList.stream().map(i -> HelperUtility.convertToDTO(i, mediaMap.getOrDefault(i.getIncidentId(), List.of()))).toList();
+
+        return new PageImpl<>(incidentDetailsDTOList, pageable, filteredIncident.getTotalElements());
     }
 
-    public Page<IncidentDTO> getMyReports(Long userId) {
+    public Page<IncidentDetailsDTO> filterByStatus(Long userId, String status, int page, int size) {
+        logger.info("Filtering incident report by status. status={}", status);
+        Pageable pageable = PageRequest.of(page, size, Sort.by("reportedAt").descending());
+
+        Status statusEnum;
+        try {
+            statusEnum = Status.valueOf(status.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            logger.error("Invalid severity enum, status={}", status, e);
+            throw new IllegalArgumentException("No such status of type " + status);
+        }
+
+
+        Page<Incident> filteredIncident = incidentRepository.findByReportedByUserIdAndDeletedAtIsNull(userId, statusEnum, pageable);
+        List<Incident> incidentList = filteredIncident.getContent();
+
+        if (incidentList.isEmpty()) {
+            return new PageImpl<>(List.of(), pageable, filteredIncident.getTotalElements());
+        }
+
+        List<Long> incidentIds = incidentList.stream().map(Incident::getIncidentId).toList();
+
+        List<Media> mediaList = mediaRepo.findByIncidentIncidentIdAndDeletedAtIsNull(incidentIds);
+        Map<Long, List<Media>> mediaMap = mediaList.stream().collect(Collectors.groupingBy(m -> m.getIncident().getIncidentId()));
+
+        List<IncidentDetailsDTO> incidentDetailsDTOList = incidentList.stream().map(i -> HelperUtility.convertToDTO(i, mediaMap.getOrDefault(i.getIncidentId(), List.of()))).toList();
+        return new PageImpl<>(incidentDetailsDTOList, pageable, filteredIncident.getTotalElements());
+    }
+
+    public Page<IncidentDetailsDTO> getMyReports(Long userId) {
         Pageable pageable = PageRequest.of(0, 10, Sort.by("reportedAt").ascending());
 
-        return incidentRepository.getMyVisibleReports(userId, pageable).map(HelperUtility::convertToDTO);
+        Page<Incident> filteredIncident = incidentRepository.getMyVisibleReports(userId, pageable);
+
+        List<Incident> incidentList = filteredIncident.getContent();
+
+        if (incidentList.isEmpty()) {
+            return new PageImpl<>(List.of(), pageable, filteredIncident.getTotalElements());
+        }
+
+        List<Long> incidentIds = incidentList.stream()
+                .map(Incident::getIncidentId)
+                .toList();
+
+        List<Media> mediaList = mediaRepo.findByIncidentIncidentIdAndDeletedAtIsNull(incidentIds);
+
+        Map<Long, List<Media>> mediaMap = mediaList.stream()
+                .collect(Collectors.groupingBy(m -> m.getIncident().getIncidentId()));
+
+        List<IncidentDetailsDTO> incidentDetailsDTOList = incidentList.stream()
+                .map(i -> HelperUtility.convertToDTO(i, mediaMap.getOrDefault(i.getIncidentId(), List.of()))).toList();
+
+        return new PageImpl<>(incidentDetailsDTOList, pageable, filteredIncident.getTotalElements());
     }
 
-    public IncidentDetailsDTO reportIncident(String email, ReportRequest request, List<MultipartFile> images) {
-        logger.info("Reporting incident: user={}, severity={}, category={}",
-                mask(email), request.getSeverity(), request.getIncidentCategory());
+    public IncidentDetailsDTO reportIncident(Long userId, ReportRequest request, List<MultipartFile> images) {
+        logger.info("Reporting incident: userId={}, severity={}, category={}",
+                userId, request.getSeverity(), request.getIncidentCategory());
 
 
-        User user = userRepository.findByEmail(email).orElseThrow(() -> new UsernameNotFoundException("Email not found"));
+        User user = userRepository.findById(userId).orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
         Severity severityEnum;
         IncidentCategory category;
@@ -128,7 +210,7 @@ public class IncidentService {
             category = IncidentCategory.valueOf(request.getIncidentCategory().toUpperCase());
 
         } catch (IllegalArgumentException e) {
-            logger.error("Failed to parse enums for incident report by user={}", mask(email), e);
+            logger.error("Failed to parse enums for incident report by userId={}", userId, e);
             throw new InvalidIncidentException("Invalid severity or category");
 
         }
@@ -197,15 +279,15 @@ public class IncidentService {
             }
         }
 
-        List<Media> media = mediaRepo.findByIncidentAndDeletedAtIsNull(savedIncident);
+        List<Media> media = mediaRepo.getByIncidentIncidentIdAndDeletedAtIsNull(savedIncident.getIncidentId());
 
-        logger.info("Report created: id={}, user={}, status={}", incident.getIncidentId(), mask(email), incident.getStatus());
-        return HelperUtility.convertToDTO(savedIncident,media);
+        logger.info("Report created: id={}, userId={}, status={}", incident.getIncidentId(), userId, incident.getStatus());
+        return HelperUtility.convertToDTO(savedIncident, media);
     }
 
-    public IncidentDTO updateReport(String email, Long reportId, ReportRequest request) {
-        logger.info("Attempting to update incident report user={},reportId={}", mask(email), reportId);
-        User user = userRepository.findByEmail(email).orElseThrow(() -> new UsernameNotFoundException("Email not found"));
+    public IncidentDetailsDTO updateReport(Long userId, Long reportId, ReportRequest request) {
+        logger.info("Attempting to update incident report userId={},reportId={}", userId, reportId);
+        User user = userRepository.findById(userId).orElseThrow(() -> new UsernameNotFoundException("user not found"));
 
         Incident incident = incidentRepository.findById(reportId).orElseThrow(() -> new IncidentNotFoundException("Incident of id " + reportId + ", not found"));
 
@@ -225,8 +307,67 @@ public class IncidentService {
         incident.setUpdatedAt(LocalDateTime.now());
         incident.setReportedBy(user);
 
-        logger.info("Updated incident report successfully reportId={}, userID={}", mask(email), user.getUserId());
-        return HelperUtility.convertToDTO(incidentRepository.save(incident));
+        Incident savedIncident = incidentRepository.save(incident);
+        logger.info("Updated incident report successfully reportId={}, userID={}", savedIncident.getIncidentId(), user.getUserId());
+        List<Media> mediaList = mediaRepo.getByIncidentIncidentIdAndDeletedAtIsNull(incident.getIncidentId());
+        return HelperUtility.convertToDTO(savedIncident, mediaList);
+    }
+
+    public List<MediaDTO> addMediaToReport(Long incidentId, List<MultipartFile> media) {
+        Incident incident = incidentRepository.findById(incidentId).orElseThrow(() -> new IncidentNotFoundException("Incident of id " + incidentId + ", not found"));
+
+        if (media != null && !media.isEmpty()) {
+            if (media.size() > 5) throw new InvalidIncidentException("Max 5 images allowed.");
+
+            for (MultipartFile file : media) {
+                if (file.isEmpty()) continue;
+
+                String contentType = file.getContentType();
+
+                if (contentType == null || !(contentType.equals("image/jpeg") || contentType.equals("image/png") || contentType.equals("image/webp"))) {
+                    throw new InvalidIncidentException("Invalid media type. Only JPG,PNG,WEBP allowed.");
+                }
+
+                if (file.getSize() > 3_000_000) {
+                    throw new InvalidIncidentException("Max image size allowed is 3MB");
+                }
+
+                String extension = switch (contentType) {
+                    case "image/jpeg" -> ".jpg";
+                    case "image/png" -> ".png";
+                    case "image/webp" -> ".webp";
+                    default -> "";
+                };
+
+                String fileName = UUID.randomUUID() + extension;
+                String storageKey = "comment/" + incident.getIncidentId() + "/" + fileName;
+
+                Path root = Paths.get("uploads").toAbsolutePath().normalize();
+                Path target = root.resolve(storageKey).normalize();
+
+                if (!target.startsWith(root)) throw new SecurityException("Invalid path");
+
+                try {
+                    Files.createDirectories(target.getParent());
+                    file.transferTo(target);
+                } catch (Exception e) {
+                    throw new RuntimeException("Failed to store image", e);
+                }
+
+                Media medFile = new Media();
+                medFile.setIncident(incident);
+                medFile.setSizeBytes(file.getSize());
+                medFile.setContentType(contentType);
+                medFile.setOriginalFilename(fileName);
+                medFile.setStorageKey(storageKey);
+                medFile.setOwner(incident.getReportedBy());
+
+                mediaRepo.save(medFile);
+            }
+        }
+
+        List<Media> mediaList = mediaRepo.getByIncidentIncidentIdAndDeletedAtIsNull(incident.getIncidentId());
+        return HelperUtility.convertToMediaDTO(mediaList);
     }
 
     //soft delete to help with auditing

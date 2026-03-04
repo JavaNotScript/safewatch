@@ -1,16 +1,21 @@
 package com.safewatch.repositories;
 
-import com.safewatch.models.Comment;
-import com.safewatch.models.Incident;
 import com.safewatch.models.Media;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.UUID;
 
-public interface MediaRepository extends JpaRepository<Media,Long> {
-    List<Media> findByIncidentIncidentIdAndDeletedAtIsNull(Long incidentId);
+public interface MediaRepository extends JpaRepository<Media, UUID> {
+    @Query("SELECT m FROM Media m WHERE m.incident.incidentId IN (:incidentId) AND m.deletedAt IS NULL")
+    List<Media> findByIncidentIncidentIdAndDeletedAtIsNull(@Param("incidentId") List<Long> incidentId);
 
-    List<Media> findByIncidentAndDeletedAtIsNull(Incident incident);
+    List<Media> getByIncidentIncidentIdAndDeletedAtIsNull(@Param("incidentId") Long incidentId);
 
-    List<Media> findByCommentAndDeletedAtIsNull(Comment comment);
+    @Query("SELECT c FROM Media c WHERE c.comment.commentId IN (:commentIds) AND c.deletedAt IS NULL")
+    List<Media> findByCommentCommentIdAndDeletedAtIsNull(@Param("commentIds") List<Long> commentIds);
+
+    List<Media> findByCommentCommentIdAndDeletedAtIsNull(Long commentId);
 }

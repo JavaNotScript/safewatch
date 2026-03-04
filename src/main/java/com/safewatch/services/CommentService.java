@@ -1,6 +1,5 @@
 package com.safewatch.services;
 
-import com.safewatch.DTOs.CommentDTO;
 import com.safewatch.DTOs.CommentDetailsDTO;
 import com.safewatch.DTOs.MediaDTO;
 import com.safewatch.exceptions.IncidentNotFoundException;
@@ -12,16 +11,12 @@ import com.safewatch.repositories.IncidentRepository;
 import com.safewatch.repositories.MediaRepository;
 import com.safewatch.util.HelperUtility;
 import com.safewatch.util.reportRelated.CommentRequest;
-import com.safewatch.util.reportRelated.CommentResponse;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.*;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.CredentialsExpiredException;
 import org.springframework.security.authentication.DisabledException;
@@ -35,7 +30,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -121,45 +118,56 @@ public class CommentService {
                 mediaRepository.save(medFile);
             }
         }
-        List<Media> mediaList = mediaRepository.findByCommentAndDeletedAtIsNull(savedComment);
-        return HelperUtility.convertToDTO(comment,mediaList);
+
+        List<Media> mediaList = mediaRepository.findByCommentCommentIdAndDeletedAtIsNull(savedComment.getCommentId());
+        return HelperUtility.convertToDTO(comment, mediaList);
     }
 
-    public Page<CommentDTO> getAllComments(Long incidentId) {
-        Pageable pageable = PageRequest.of(0, 10, Sort.by("createdAt").ascending());
+    public Page<CommentDetailsDTO> getAllComments(Long incidentId) {
+        Pageable pageable = PageRequest.of(0, 10, Sort.by("createdAt").descending());
 
-        return commentRepo.findVisibleByIncident(incidentId, pageable).map(HelperUtility::convertToDTO);
+        Page<Comment> commentPage = commentRepo.findVisibleByIncident(incidentId, pageable);
+        List<Comment> commentList = commentPage.getContent();
+
+        if (commentList.isEmpty()) return new PageImpl<>(List.of(), pageable, commentPage.getTotalElements());
+
+        List<Long> commentIds = commentList.stream().map(Comment::getCommentId).toList();
+
+        List<Media> mediaList = mediaRepository.findByCommentCommentIdAndDeletedAtIsNull(commentIds);
+
+        Map<Long, List<Media>> mediaMap = mediaList.stream().collect(Collectors.groupingBy(m -> m.getIncident().getIncidentId()));
+
+        List<CommentDetailsDTO> commentDetailsDTOList = commentList.stream()
+                .map(c -> HelperUtility.convertToDTO(c, mediaMap.getOrDefault(c.getCommentId(), List.of())))
+                .toList();
+
+        return new PageImpl<>(commentDetailsDTOList, pageable, commentPage.getTotalElements());
     }
 
     public CommentDetailsDTO getCommentUnderIncidentById(long commentId, Long incidentId) {
         Comment comment = commentRepo.findVisibleCommentByCommentId(commentId, incidentId);
-        List<Media> media = mediaRepository.findByIncidentIncidentIdAndDeletedAtIsNull(incidentId);
+        List<Media> media = mediaRepository.findByCommentCommentIdAndDeletedAtIsNull(incidentId);
 
         return HelperUtility.convertToDTO(comment, media);
     }
 
-    public CommentResponse updateCommentUnderIncident(Long userId, @Valid CommentRequest request, Long commentId) {
+    public CommentDetailsDTO updateCommentUnderIncident(Long userId, @Valid CommentRequest request, Long commentId) {
         Comment comment = commentRepo.findById(commentId).orElseThrow(() -> new RuntimeException("Comment with id " + commentId + " not found"));
+        User user = userRepository.findById(userId).orElseThrow(() -> new UsernameNotFoundException("user not found"));
 
-        if (!comment.getUser().getUserId().equals(userId)) {
+        if (!comment.getUser().getUserId().equals(user.getUserId())) {
             throw new AccessDeniedException("User does not have permission to update comment");
         }
 
-        User user = userRepository.findById(userId).orElseThrow(() -> new UsernameNotFoundException("user not found"));
-
         comment.setComment(request.description());
 
-        Comment saved = commentRepo.save(comment);
-        return new CommentResponse(
-                saved.getCommentId(),
-                saved.getIncident().getIncidentId(),
-                user.getUserId(),
-                saved.getComment(),
-                saved.getUpdatedAt()
-        );
+        Comment savedComment = commentRepo.save(comment);
+        List<Media> mediaList = mediaRepository.findByCommentCommentIdAndDeletedAtIsNull(savedComment.getCommentId());
+
+        return HelperUtility.convertToDTO(savedComment, mediaList);
     }
 
-    public List<MediaDTO> addMedia(Long commentId, Long incidentId, List<MultipartFile> media) {
+    public List<MediaDTO> addMediaToComment( Long incidentId,Long commentId, List<MultipartFile> media) {
         Comment comment = commentRepo.findVisibleCommentByCommentId(commentId, incidentId);
 
         if (media != null && !media.isEmpty()) {
@@ -210,8 +218,8 @@ public class CommentService {
             }
         }
 
-        List<Media> mediaList = mediaRepository.findByCommentAndDeletedAtIsNull(comment);
-        return HelperUtility.convertToDetailsDTO(mediaList);
+        List<Media> mediaList = mediaRepository.findByCommentCommentIdAndDeletedAtIsNull(comment.getCommentId());
+        return HelperUtility.convertToMediaDTO(mediaList);
     }
 
     @Transactional

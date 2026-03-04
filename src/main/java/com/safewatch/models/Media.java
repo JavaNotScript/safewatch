@@ -24,27 +24,27 @@ public class Media {
     private UUID mediaId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "owner",nullable = false)
+    @JoinColumn(name = "owner", nullable = false)
     private User owner;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn (name = "incident_id")
+    @JoinColumn(name = "incident_id")
     private Incident incident;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "comment_id")
     private Comment comment;
 
-    @Column(name = "storage_key", nullable = false,length = 500)
+    @Column(name = "storage_key", nullable = false, length = 500)
     private String storageKey;
 
-    @Column(name = "original_filename",nullable = false,length = 250)
+    @Column(name = "original_filename", nullable = false, length = 250)
     private String originalFilename;
 
-    @Column(name = "content_type",nullable = false,length = 100)
+    @Column(name = "content_type", nullable = false, length = 100)
     private String contentType;
 
-    @Column(name = "size_bytes",nullable = false)
+    @Column(name = "size_bytes", nullable = false)
     private long sizeBytes;
 
     @CreationTimestamp
