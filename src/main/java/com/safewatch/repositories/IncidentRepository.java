@@ -32,4 +32,12 @@ public interface IncidentRepository extends JpaRepository<Incident, Long> {
 
     @Query("SELECT i FROM Incident i WHERE i.deletedAt IS NOT NULL")
     Page<Incident> getDeletedAtIncidents(Pageable pageable);
+
+    Page<Incident> findByIncidentCategory(IncidentCategory categoryEnum, Pageable pageable);
+
+    Page<Incident> findByStatus(Status statusEnum, Pageable pageable);
+
+    Page<Incident> findBySeverity(Severity severityEnum, Pageable pageable);
+
+    Page<Incident> findByReportedByUserId(Long userId,Pageable pageable);
 }

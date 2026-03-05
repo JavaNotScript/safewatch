@@ -195,4 +195,147 @@ public class IncidentModerationService implements IncidentModerationPolicy {
         return HelperUtility.convertToDTO(comment, mediaList);
     }
 
+    public Page<IncidentDetailsDTO> filterByCategory(String category, Pageable pageable) {
+        IncidentCategory categoryEnum;
+
+        try {
+            categoryEnum = IncidentCategory.valueOf(category.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new IncidentNotFoundException("Category: " + category + " not found");
+        }
+
+        Page<Incident> incidentPage = incidentRepository.findByIncidentCategory(categoryEnum, pageable);
+        List<Incident> incidentList = incidentPage.getContent();
+
+        if (incidentList.isEmpty()) {
+            return new PageImpl<>(List.of(), pageable, incidentPage.getTotalElements());
+        }
+
+        List<Long> incidentIds = incidentList.stream()
+                .map(Incident::getIncidentId)
+                .toList();
+
+        List<Media> mediaList = mediaRepo.findByIncidentIncidentId(incidentIds);
+        Map<Long, List<Media>> mediaMap = mediaList.stream().collect(Collectors.groupingBy(m -> m.getIncident().getIncidentId()));
+
+        List<IncidentDetailsDTO> incidentDetailsDTOList = incidentList.stream()
+                .map(i -> HelperUtility.convertToDTO(i, mediaMap.getOrDefault(i.getIncidentId(), List.of())))
+                .toList();
+
+        return new PageImpl<>(incidentDetailsDTOList, pageable, incidentPage.getTotalElements());
+    }
+
+    public Page<IncidentDetailsDTO> filterByStatus(String status, Pageable pageable) {
+        Status statusEnum;
+
+        try {
+            statusEnum = Status.valueOf(status.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new IncidentNotFoundException("Status: " + status + " not found");
+        }
+
+        Page<Incident> incidentPage = incidentRepository.findByStatus(statusEnum, pageable);
+        List<Incident> incidentList = incidentPage.getContent();
+
+        if (incidentList.isEmpty()) {
+            return new PageImpl<>(List.of(), pageable, incidentPage.getTotalElements());
+        }
+
+        List<Long> incidentIds = incidentList.stream()
+                .map(Incident::getIncidentId)
+                .toList();
+
+        List<Media> mediaList = mediaRepo.findByIncidentIncidentId(incidentIds);
+
+        Map<Long, List<Media>> mediaMap = mediaList.stream()
+                .collect(Collectors.groupingBy(m -> m.getIncident().getIncidentId()));
+
+        List<IncidentDetailsDTO> incidentDetailsDTOList = incidentList.stream()
+                .map(i -> HelperUtility.convertToDTO(i, mediaMap.getOrDefault(i.getIncidentId(), List.of())))
+                .toList();
+
+        return new PageImpl<>(incidentDetailsDTOList, pageable, incidentPage.getTotalElements());
+    }
+
+    public Page<IncidentDetailsDTO> filterBySeverity(String severity, Pageable pageable) {
+        Severity severityEnum;
+
+        try {
+            severityEnum = Severity.valueOf(severity.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new IncidentNotFoundException("Status: " + severity + " not found");
+        }
+
+        Page<Incident> incidentPage = incidentRepository.findBySeverity(severityEnum, pageable);
+        List<Incident> incidentList = incidentPage.getContent();
+
+        if (incidentList.isEmpty()) {
+            return new PageImpl<>(List.of(), pageable, incidentPage.getTotalElements());
+        }
+
+        List<Long> incidentIds = incidentList.stream()
+                .map(Incident::getIncidentId)
+                .toList();
+
+        List<Media> mediaList = mediaRepo.findByIncidentIncidentId(incidentIds);
+
+        Map<Long, List<Media>> mediaMap = mediaList.stream()
+                .collect(Collectors.groupingBy(m -> m.getIncident().getIncidentId()));
+
+        List<IncidentDetailsDTO> incidentDetailsDTOList = incidentList.stream()
+                .map(i -> HelperUtility.convertToDTO(i, mediaMap.getOrDefault(i.getIncidentId(), List.of())))
+                .toList();
+
+        return new PageImpl<>(incidentDetailsDTOList, pageable, incidentPage.getTotalElements());
+    }
+
+    public Page<IncidentDetailsDTO> getReportsByUser(Long userId, Pageable pageable) {
+        User user = userRepository.findById(userId).orElseThrow(() -> new IncidentNotFoundException("User not found: " + userId));
+
+        Page<Incident> incidentPage = incidentRepository.findByReportedByUserId(user.getUserId(),pageable);
+        List<Incident> incidentList = incidentPage.getContent();
+
+        if (incidentList.isEmpty()) {
+            return new PageImpl<>(List.of(), pageable, incidentPage.getTotalElements());
+        }
+
+        List<Long> incidentIds = incidentList.stream()
+                .map(Incident::getIncidentId)
+                .toList();
+
+        List<Media> mediaList = mediaRepo.findByIncidentIncidentId(incidentIds);
+        Map<Long,List<Media>> mediaMap = mediaList.stream()
+                .collect(Collectors.groupingBy(m -> m.getIncident().getIncidentId()));
+
+        List<IncidentDetailsDTO> incidentDetailsDTOList = incidentList.stream()
+                .map(i -> HelperUtility.convertToDTO(i,mediaMap.getOrDefault(i.getIncidentId(),List.of())))
+                .toList();
+
+        return new  PageImpl<>(incidentDetailsDTOList, pageable, incidentPage.getTotalElements());
+    }
+
+    public Page<CommentDetailsDTO> getCommentsByUser(Long userId, Pageable pageable) {
+        User user = userRepository.findById(userId).orElseThrow(() -> new IncidentNotFoundException("User not found: " + userId));
+
+        Page<Comment> commentPage = commentRepository.findByUserUserId(user.getUserId(),pageable);
+        List<Comment> commentList = commentPage.getContent();
+
+        if (commentList.isEmpty()) {
+            return new PageImpl<>(List.of(), pageable, commentPage.getTotalElements());
+        }
+
+        List<Long> commentIds = commentList.stream()
+                .map(Comment::getCommentId)
+                .toList();
+
+        List<Media> mediaList = mediaRepo.findByCommentCommentId(commentIds);
+        Map<Long,List<Media>> mediaMap = mediaList.stream()
+                .collect(Collectors.groupingBy(m -> m.getComment().getCommentId()));
+
+        List<CommentDetailsDTO> commentDetailsDTOList = commentList.stream()
+                .map(c -> HelperUtility.convertToDTO(c,mediaMap.getOrDefault(c.getCommentId(),List.of())))
+                .toList();
+
+        return new  PageImpl<>(commentDetailsDTOList, pageable, commentPage.getTotalElements());
+    }
 }

@@ -1,6 +1,5 @@
 package com.safewatch.controllers;
 
-import com.safewatch.DTOs.CommentDTO;
 import com.safewatch.DTOs.CommentDetailsDTO;
 import com.safewatch.DTOs.IncidentDTO;
 import com.safewatch.DTOs.IncidentDetailsDTO;
@@ -54,6 +53,36 @@ public class IncidentModerationController {
         return ResponseEntity.ok(incidentModerationService.getDeletedIncidents(pageable));
     }
 
+    @GetMapping("/get/category")
+    public ResponseEntity<Page<IncidentDetailsDTO>> filterByCategory(@RequestParam(defaultValue = "0") int pageNumber, @RequestParam(defaultValue = "10") int pageSize,@RequestParam String category) {
+        Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by("reportedAt").descending());
+        return ResponseEntity.ok(incidentModerationService.filterByCategory(category,pageable));
+    }
+
+    @GetMapping("/get/severity")
+    public ResponseEntity<Page<IncidentDetailsDTO>> filterBySeverity(@RequestParam(defaultValue = "0") int pageNumber, @RequestParam(defaultValue = "10") int pageSize,@RequestParam String severity) {
+        Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by("reportedAt").descending());
+        return ResponseEntity.ok(incidentModerationService.filterBySeverity(severity,pageable));
+    }
+
+    @GetMapping("/get/status")
+    public ResponseEntity<Page<IncidentDetailsDTO>> filterByStatus(@RequestParam(defaultValue = "0") int pageNumber, @RequestParam(defaultValue = "10") int pageSize,@RequestParam String status) {
+        Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by("reportedAt").descending());
+        return ResponseEntity.ok(incidentModerationService.filterByStatus(status,pageable));
+    }
+
+    @GetMapping("/get/reportedBy/{userId}")
+    public ResponseEntity<Page<IncidentDetailsDTO>> getReportsByUser(@RequestParam(defaultValue = "0") int pageNumber, @RequestParam(defaultValue = "10") int pageSize,@PathVariable Long userId) {
+        Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by("reportedAt").descending());
+        return ResponseEntity.ok(incidentModerationService.getReportsByUser(userId,pageable));
+    }
+
+    @GetMapping("/comment/get/commentBy/{userId}")
+    public ResponseEntity<Page<CommentDetailsDTO>> getCommentsByUser(@RequestParam(defaultValue = "0") int pageNumber, @RequestParam(defaultValue = "10") int pageSize,@PathVariable Long userId) {
+        Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by("reportedAt").descending());
+        return ResponseEntity.ok(incidentModerationService.getCommentsByUser(userId,pageable));
+    }
+
     @GetMapping("/{incidentId}/get/comments")
     public ResponseEntity<Page<CommentDetailsDTO>> getCommentsUnderIncident(@PathVariable("incidentId") Long incidentId) {
         return ResponseEntity.ok(incidentModerationService.getCommentsUnderIncident(incidentId));
@@ -93,7 +122,7 @@ public class IncidentModerationController {
         return ResponseEntity.ok(incidentModerationService.flagIncident(reportId, email, reason));
     }
 
-    @PostMapping("/report/archive/{reportId}")
+    @PostMapping("/delete/{reportId}")
     public ResponseEntity<String> deleteReportById(Authentication authentication, @PathVariable Long reportId) {
         String email = extractEmail(authentication);
         return ResponseEntity.ok(incidentModerationService.deleteReportById(email, reportId));

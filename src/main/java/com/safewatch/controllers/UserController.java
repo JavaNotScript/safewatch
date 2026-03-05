@@ -3,6 +3,7 @@ package com.safewatch.controllers;
 import com.safewatch.DTOs.CurrentUserDTO;
 import com.safewatch.models.User;
 import com.safewatch.repositories.CurrentUserRepository;
+import com.safewatch.security.UserPrincipal;
 import com.safewatch.services.UserService;
 import com.safewatch.util.userRelated.*;
 import jakarta.servlet.http.HttpServletRequest;
@@ -32,6 +33,20 @@ public class UserController {
     private final boolean isSecure;
     private final String path;
     private final String site;
+
+    private Long extractUserId(Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new AccessDeniedException("Access denied");
+        }
+
+        Object principal = authentication.getPrincipal();
+
+        if (!(principal instanceof UserPrincipal op)) {
+            throw new AccessDeniedException("Access denied");
+        }
+
+        return op.getUserId();
+    }
 
     public UserController(UserService userService, CurrentUserRepository currentUserRepository, @Value("${app.cookie.secure}") boolean isSecure, @Value("${app.cookie.path}") String path, @Value("${app.cookie.samesite}") String site) {
         this.userService = userService;
@@ -145,6 +160,13 @@ public class UserController {
     @PutMapping("/verify")
     public ResponseEntity<?> resetPassword(@RequestBody @Valid PasswordResetRequest resetRequest) {
         userService.passwordReset(resetRequest.token(), resetRequest.newPassword(), resetRequest.confirmPassword());
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/delete-account/{password}")
+    public ResponseEntity<Void> deActivateAccount(Authentication authentication,@RequestPart String password){
+        Long userId = extractUserId(authentication);
+        userService.deactivateAccount(userId,password);
         return ResponseEntity.ok().build();
     }
 }

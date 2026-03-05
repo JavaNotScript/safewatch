@@ -338,4 +338,19 @@ public class UserService {
         mailService.sendMail(user.getEmail(), "SAFEWATCH -password change", "Your account password has been successfully changed, if this wasn't you kindly contact support.");
 
     }
+
+    public void deactivateAccount(Long userId,String password) {
+        User user = currentUserRepository.findById(userId).orElseThrow(() -> new UsernameNotFoundException("User not found."));
+
+        if (!passwordEncoder.matches(password, user.getPassword())) {
+            throw new BadCredentialsException("Invalid password");
+        }
+
+        user.setLocked(true);
+        user.setCredentialsExpired(true);
+        user.setEnabled(false);
+
+        currentUserRepository.save(user);
+        mailService.sendMail(user.getEmail(),"ACCOUNT DEACTIVATED","Your safewatch account has been successfully deactivated if this was not you kindly contact support.");
+    }
 }
