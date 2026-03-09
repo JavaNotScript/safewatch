@@ -339,7 +339,7 @@ public class UserService {
 
     }
 
-    public void deactivateAccount(Long userId,String password) {
+    public void deactivateAccount(Long userId, String password) {
         User user = currentUserRepository.findById(userId).orElseThrow(() -> new UsernameNotFoundException("User not found."));
 
         if (!passwordEncoder.matches(password, user.getPassword())) {
@@ -351,6 +351,6 @@ public class UserService {
         user.setEnabled(false);
 
         currentUserRepository.save(user);
-        mailService.sendMail(user.getEmail(),"ACCOUNT DEACTIVATED","Your safewatch account has been successfully deactivated if this was not you kindly contact support.");
+        mailService.sendMail(user.getEmail(), "ACCOUNT DEACTIVATED", "Your safewatch account has been successfully deactivated if this was not you kindly contact support.");
     }
 }

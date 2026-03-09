@@ -221,6 +221,8 @@ public class IncidentService {
         incident.setReportedAt(LocalDateTime.now());
         incident.setTitle(request.getTitle().trim());
         incident.setIncidentCategory(category);
+        incident.setLongitude(request.getLongitude());
+        incident.setLatitude(request.getLatitude());
         incident.setLocation(request.getLocation().trim());
         incident.setStatus(Status.PENDING);
         incident.setSeverity(severityEnum);

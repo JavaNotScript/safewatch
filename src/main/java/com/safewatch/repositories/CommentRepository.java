@@ -30,8 +30,5 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
     )
     Comment findVisibleCommentByCommentId(Long commentId, Long incidentId);
 
-    @Query("SELECT c FROM Comment c WHERE c.incident.incidentId = :incidentId AND c.commentId = :commentId")
-    Comment findByCommentIdAndIncidentId(@Param("incidentId") Long incidentId, @Param("commentId") Long commentId);
-
     Page<Comment> findByUserUserId(Long userId, Pageable pageable);
 }

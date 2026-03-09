@@ -75,7 +75,7 @@ public class IncidentController {
     }
 
     @PostMapping(value = "/{incidentId}/media", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<List<MediaDTO>> addMediaToReport(@PathVariable Long incidentId,@RequestPart(required = false,value = "images") List<MultipartFile> media) {
+    public ResponseEntity<List<MediaDTO>> addMediaToReport(@PathVariable Long incidentId, @RequestPart(required = false, value = "images") List<MultipartFile> media) {
         return ResponseEntity.ok(service.addMediaToReport(incidentId, media));
     }
 

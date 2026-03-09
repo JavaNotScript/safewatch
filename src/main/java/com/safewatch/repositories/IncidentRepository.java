@@ -39,5 +39,5 @@ public interface IncidentRepository extends JpaRepository<Incident, Long> {
 
     Page<Incident> findBySeverity(Severity severityEnum, Pageable pageable);
 
-    Page<Incident> findByReportedByUserId(Long userId,Pageable pageable);
+    Page<Incident> findByReportedByUserId(Long userId, Pageable pageable);
 }

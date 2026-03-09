@@ -292,7 +292,7 @@ public class IncidentModerationService implements IncidentModerationPolicy {
     public Page<IncidentDetailsDTO> getReportsByUser(Long userId, Pageable pageable) {
         User user = userRepository.findById(userId).orElseThrow(() -> new IncidentNotFoundException("User not found: " + userId));
 
-        Page<Incident> incidentPage = incidentRepository.findByReportedByUserId(user.getUserId(),pageable);
+        Page<Incident> incidentPage = incidentRepository.findByReportedByUserId(user.getUserId(), pageable);
         List<Incident> incidentList = incidentPage.getContent();
 
         if (incidentList.isEmpty()) {
@@ -304,20 +304,20 @@ public class IncidentModerationService implements IncidentModerationPolicy {
                 .toList();
 
         List<Media> mediaList = mediaRepo.findByIncidentIncidentId(incidentIds);
-        Map<Long,List<Media>> mediaMap = mediaList.stream()
+        Map<Long, List<Media>> mediaMap = mediaList.stream()
                 .collect(Collectors.groupingBy(m -> m.getIncident().getIncidentId()));
 
         List<IncidentDetailsDTO> incidentDetailsDTOList = incidentList.stream()
-                .map(i -> HelperUtility.convertToDTO(i,mediaMap.getOrDefault(i.getIncidentId(),List.of())))
+                .map(i -> HelperUtility.convertToDTO(i, mediaMap.getOrDefault(i.getIncidentId(), List.of())))
                 .toList();
 
-        return new  PageImpl<>(incidentDetailsDTOList, pageable, incidentPage.getTotalElements());
+        return new PageImpl<>(incidentDetailsDTOList, pageable, incidentPage.getTotalElements());
     }
 
     public Page<CommentDetailsDTO> getCommentsByUser(Long userId, Pageable pageable) {
         User user = userRepository.findById(userId).orElseThrow(() -> new IncidentNotFoundException("User not found: " + userId));
 
-        Page<Comment> commentPage = commentRepository.findByUserUserId(user.getUserId(),pageable);
+        Page<Comment> commentPage = commentRepository.findByUserUserId(user.getUserId(), pageable);
         List<Comment> commentList = commentPage.getContent();
 
         if (commentList.isEmpty()) {
@@ -329,13 +329,41 @@ public class IncidentModerationService implements IncidentModerationPolicy {
                 .toList();
 
         List<Media> mediaList = mediaRepo.findByCommentCommentId(commentIds);
-        Map<Long,List<Media>> mediaMap = mediaList.stream()
+        Map<Long, List<Media>> mediaMap = mediaList.stream()
                 .collect(Collectors.groupingBy(m -> m.getComment().getCommentId()));
 
         List<CommentDetailsDTO> commentDetailsDTOList = commentList.stream()
-                .map(c -> HelperUtility.convertToDTO(c,mediaMap.getOrDefault(c.getCommentId(),List.of())))
+                .map(c -> HelperUtility.convertToDTO(c, mediaMap.getOrDefault(c.getCommentId(), List.of())))
                 .toList();
 
-        return new  PageImpl<>(commentDetailsDTOList, pageable, commentPage.getTotalElements());
+        return new PageImpl<>(commentDetailsDTOList, pageable, commentPage.getTotalElements());
+    }
+
+    public IncidentDetailsDTO getIncidentReportedBy(Long userId, Long incidentId) {
+        User user = userRepository.findById(userId).orElseThrow(() -> new IncidentNotFoundException("User not found: " + userId));
+
+        Incident incident = incidentRepository.findById(incidentId).orElseThrow(() -> new IncidentNotFoundException("Incident not found: " + incidentId));
+
+        if (!user.getUserId().equals(incident.getReportedBy().getUserId())) {
+            throw new IncidentNotFoundException("incident not found");
+        }
+
+        List<Media> mediaList = mediaRepo.findByIncidentIncidentId(incident.getIncidentId());
+
+        return HelperUtility.convertToDTO(incident, mediaList);
+    }
+
+    public CommentDetailsDTO getCommentIncidentId(Long commentId, Long userId) {
+        User user = userRepository.findById(userId).orElseThrow(() -> new IncidentNotFoundException("User not found: " + userId));
+
+        Comment comment = commentRepository.findById(commentId).orElseThrow(() -> new IncidentNotFoundException("Comment not found: " + commentId));
+
+        if (!comment.getUser().getUserId().equals(user.getUserId())) {
+            throw new IncidentNotFoundException("comment not found");
+        }
+
+        List<Media> mediaList = mediaRepo.findByCommentCommentId(comment.getCommentId());
+
+        return HelperUtility.convertToDTO(comment, mediaList);
     }
 }

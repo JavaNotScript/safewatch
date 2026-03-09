@@ -53,9 +53,9 @@ public class CommentController {
         return ResponseEntity.ok(service.makeComment(userId, request, media, incidentId));
     }
 
-    @PostMapping(value = "{incidentId}/{commentId}/media",consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<List<MediaDTO>> addMediaToComment(@PathVariable Long incidentId,@PathVariable Long commentId, @RequestPart(required = false,value = "images") List<MultipartFile> media) {
-        return ResponseEntity.ok(service.addMediaToComment(incidentId,commentId,media));
+    @PostMapping(value = "{incidentId}/{commentId}/media", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<List<MediaDTO>> addMediaToComment(@PathVariable Long incidentId, @PathVariable Long commentId, @RequestPart(required = false, value = "images") List<MultipartFile> media) {
+        return ResponseEntity.ok(service.addMediaToComment(incidentId, commentId, media));
     }
 
     @PutMapping("/update/{incidentId}/{commentId}")

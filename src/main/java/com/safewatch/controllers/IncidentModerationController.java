@@ -54,33 +54,43 @@ public class IncidentModerationController {
     }
 
     @GetMapping("/get/category")
-    public ResponseEntity<Page<IncidentDetailsDTO>> filterByCategory(@RequestParam(defaultValue = "0") int pageNumber, @RequestParam(defaultValue = "10") int pageSize,@RequestParam String category) {
+    public ResponseEntity<Page<IncidentDetailsDTO>> filterByCategory(@RequestParam(defaultValue = "0") int pageNumber, @RequestParam(defaultValue = "10") int pageSize, @RequestParam String category) {
         Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by("reportedAt").descending());
-        return ResponseEntity.ok(incidentModerationService.filterByCategory(category,pageable));
+        return ResponseEntity.ok(incidentModerationService.filterByCategory(category, pageable));
     }
 
     @GetMapping("/get/severity")
-    public ResponseEntity<Page<IncidentDetailsDTO>> filterBySeverity(@RequestParam(defaultValue = "0") int pageNumber, @RequestParam(defaultValue = "10") int pageSize,@RequestParam String severity) {
+    public ResponseEntity<Page<IncidentDetailsDTO>> filterBySeverity(@RequestParam(defaultValue = "0") int pageNumber, @RequestParam(defaultValue = "10") int pageSize, @RequestParam String severity) {
         Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by("reportedAt").descending());
-        return ResponseEntity.ok(incidentModerationService.filterBySeverity(severity,pageable));
+        return ResponseEntity.ok(incidentModerationService.filterBySeverity(severity, pageable));
     }
 
     @GetMapping("/get/status")
-    public ResponseEntity<Page<IncidentDetailsDTO>> filterByStatus(@RequestParam(defaultValue = "0") int pageNumber, @RequestParam(defaultValue = "10") int pageSize,@RequestParam String status) {
+    public ResponseEntity<Page<IncidentDetailsDTO>> filterByStatus(@RequestParam(defaultValue = "0") int pageNumber, @RequestParam(defaultValue = "10") int pageSize, @RequestParam String status) {
         Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by("reportedAt").descending());
-        return ResponseEntity.ok(incidentModerationService.filterByStatus(status,pageable));
+        return ResponseEntity.ok(incidentModerationService.filterByStatus(status, pageable));
     }
 
     @GetMapping("/get/reportedBy/{userId}")
-    public ResponseEntity<Page<IncidentDetailsDTO>> getReportsByUser(@RequestParam(defaultValue = "0") int pageNumber, @RequestParam(defaultValue = "10") int pageSize,@PathVariable Long userId) {
+    public ResponseEntity<Page<IncidentDetailsDTO>> getReportsByUser(@RequestParam(defaultValue = "0") int pageNumber, @RequestParam(defaultValue = "10") int pageSize, @PathVariable Long userId) {
         Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by("reportedAt").descending());
-        return ResponseEntity.ok(incidentModerationService.getReportsByUser(userId,pageable));
+        return ResponseEntity.ok(incidentModerationService.getReportsByUser(userId, pageable));
+    }
+
+    @GetMapping("/get/reportedBy/{userId}/{incidentId}")
+    public ResponseEntity<IncidentDetailsDTO> getIncidentReportedBy(@PathVariable Long userId,@PathVariable Long incidentId) {
+        return ResponseEntity.ok(incidentModerationService.getIncidentReportedBy(userId,incidentId));
     }
 
     @GetMapping("/comment/get/commentBy/{userId}")
-    public ResponseEntity<Page<CommentDetailsDTO>> getCommentsByUser(@RequestParam(defaultValue = "0") int pageNumber, @RequestParam(defaultValue = "10") int pageSize,@PathVariable Long userId) {
-        Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by("reportedAt").descending());
-        return ResponseEntity.ok(incidentModerationService.getCommentsByUser(userId,pageable));
+    public ResponseEntity<Page<CommentDetailsDTO>> getCommentsByUser(@RequestParam(defaultValue = "0") int pageNumber, @RequestParam(defaultValue = "10") int pageSize, @PathVariable Long userId) {
+        Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by("createdAt").descending());
+        return ResponseEntity.ok(incidentModerationService.getCommentsByUser(userId, pageable));
+    }
+
+    @GetMapping("/get/commentedBy/{userId}/{commentId}")
+    public ResponseEntity<CommentDetailsDTO> getCommentByUserId(@PathVariable Long commentId,@PathVariable Long userId) {
+        return ResponseEntity.ok(incidentModerationService.getCommentIncidentId(commentId,userId));
     }
 
     @GetMapping("/{incidentId}/get/comments")

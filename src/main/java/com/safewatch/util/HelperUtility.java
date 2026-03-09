@@ -34,6 +34,8 @@ public class HelperUtility {
                 incident.getIncidentId(),
                 incident.getTitle(),
                 incident.getLocation(),
+                incident.getLongitude(),
+                incident.getLatitude(),
                 incident.getSeverity(),
                 incident.getIncidentCategory(),
                 incident.getStatus(),
@@ -70,15 +72,6 @@ public class HelperUtility {
 
     public static List<MediaDTO> convertToMediaDTO(List<Media> mediaList) {
         return mediaList.stream().map(HelperUtility::convertToDTO).collect(Collectors.toList());
-    }
-
-    public static CommentDTO convertToDTO(Comment comment) {
-        return new CommentDTO(
-                comment.getIncident().getIncidentId(),
-                comment.getUser().getUserId(),
-                comment.getComment(),
-                comment.getCreatedAt()
-        );
     }
 
     public static CommentDetailsDTO convertToDTO(Comment comment, List<Media> media) {

@@ -34,6 +34,14 @@ public class UserController {
     private final String path;
     private final String site;
 
+    public UserController(UserService userService, CurrentUserRepository currentUserRepository, @Value("${app.cookie.secure}") boolean isSecure, @Value("${app.cookie.path}") String path, @Value("${app.cookie.samesite}") String site) {
+        this.userService = userService;
+        this.currentUserRepository = currentUserRepository;
+        this.isSecure = isSecure;
+        this.path = path;
+        this.site = site;
+    }
+
     private Long extractUserId(Authentication authentication) {
         if (authentication == null || !authentication.isAuthenticated()) {
             throw new AccessDeniedException("Access denied");
@@ -46,14 +54,6 @@ public class UserController {
         }
 
         return op.getUserId();
-    }
-
-    public UserController(UserService userService, CurrentUserRepository currentUserRepository, @Value("${app.cookie.secure}") boolean isSecure, @Value("${app.cookie.path}") String path, @Value("${app.cookie.samesite}") String site) {
-        this.userService = userService;
-        this.currentUserRepository = currentUserRepository;
-        this.isSecure = isSecure;
-        this.path = path;
-        this.site = site;
     }
 
     private User findUser(String email) {
@@ -163,10 +163,10 @@ public class UserController {
         return ResponseEntity.ok().build();
     }
 
-    @PostMapping("/delete-account/{password}")
-    public ResponseEntity<Void> deActivateAccount(Authentication authentication,@RequestPart String password){
+    @PostMapping("/deactivate-account/{password}")
+    public ResponseEntity<Void> deActivateAccount(Authentication authentication, @RequestPart String password) {
         Long userId = extractUserId(authentication);
-        userService.deactivateAccount(userId,password);
+        userService.deactivateAccount(userId, password);
         return ResponseEntity.ok().build();
     }
 }

@@ -33,6 +33,12 @@ public class Incident {
     @Column(nullable = false, name = "location")
     private String location;
 
+    @Column(name = "longitude",nullable = false)
+    private double longitude;
+
+    @Column(name = "latitude",nullable = false)
+    private double latitude;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "severity")
     private Severity severity;
@@ -80,7 +86,4 @@ public class Incident {
     @Column(name = "deleted_by")
     private Long deletedBy;
 
-    public boolean isDeleted() {
-        return deletedAt != null;
-    }
 }

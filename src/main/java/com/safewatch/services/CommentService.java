@@ -167,7 +167,7 @@ public class CommentService {
         return HelperUtility.convertToDTO(savedComment, mediaList);
     }
 
-    public List<MediaDTO> addMediaToComment( Long incidentId,Long commentId, List<MultipartFile> media) {
+    public List<MediaDTO> addMediaToComment(Long incidentId, Long commentId, List<MultipartFile> media) {
         Comment comment = commentRepo.findVisibleCommentByCommentId(commentId, incidentId);
 
         if (media != null && !media.isEmpty()) {

@@ -13,6 +13,8 @@ public class ReportRequest {
 
     private String title;
     private String description;
+    private double longitude;
+    private double latitude;
     private String location;
     private String severity;
     private String incidentCategory;
