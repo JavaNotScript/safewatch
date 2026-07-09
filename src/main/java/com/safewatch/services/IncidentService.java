@@ -2,13 +2,14 @@ package com.safewatch.services;
 
 import com.safewatch.DTOs.IncidentDetailsDTO;
 import com.safewatch.DTOs.MediaDTO;
-import com.safewatch.exceptions.IncidentNotFoundException;
-import com.safewatch.exceptions.InvalidIncidentException;
+import com.safewatch.auth.internal.domain.User;
+import com.safewatch.common.exceptions.IncidentNotFoundException;
+import com.safewatch.common.exceptions.InvalidIncidentException;
 import com.safewatch.models.*;
-import com.safewatch.repositories.CurrentUserRepository;
+import com.safewatch.auth.internal.repo.CurrentUserRepository;
 import com.safewatch.repositories.IncidentRepository;
 import com.safewatch.repositories.MediaRepository;
-import com.safewatch.util.HelperUtility;
+import com.safewatch.common.util.HelperUtility;
 import com.safewatch.util.reportRelated.ReportRequest;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;

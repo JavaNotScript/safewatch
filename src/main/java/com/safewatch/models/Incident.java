@@ -1,6 +1,7 @@
 package com.safewatch.models;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.safewatch.auth.internal.domain.User;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;

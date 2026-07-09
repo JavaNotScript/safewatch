@@ -1,5 +1,6 @@
 package com.safewatch.models;
 
+import com.safewatch.auth.internal.domain.User;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;

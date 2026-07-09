@@ -3,7 +3,7 @@ package com.safewatch.controllers;
 import com.safewatch.DTOs.CommentDetailsDTO;
 import com.safewatch.DTOs.IncidentDTO;
 import com.safewatch.DTOs.IncidentDetailsDTO;
-import com.safewatch.security.UserPrincipal;
+import com.safewatch.auth.internal.security.UserPrincipal;
 import com.safewatch.services.IncidentModerationService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;

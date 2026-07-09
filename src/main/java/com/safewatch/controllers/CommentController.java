@@ -2,7 +2,7 @@ package com.safewatch.controllers;
 
 import com.safewatch.DTOs.CommentDetailsDTO;
 import com.safewatch.DTOs.MediaDTO;
-import com.safewatch.security.UserPrincipal;
+import com.safewatch.auth.internal.security.UserPrincipal;
 import com.safewatch.services.CommentService;
 import com.safewatch.util.reportRelated.CommentRequest;
 import jakarta.validation.Valid;

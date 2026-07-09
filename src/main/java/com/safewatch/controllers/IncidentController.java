@@ -2,7 +2,7 @@ package com.safewatch.controllers;
 
 import com.safewatch.DTOs.IncidentDetailsDTO;
 import com.safewatch.DTOs.MediaDTO;
-import com.safewatch.security.UserPrincipal;
+import com.safewatch.auth.internal.security.UserPrincipal;
 import com.safewatch.services.IncidentService;
 import com.safewatch.util.reportRelated.ReportRequest;
 import lombok.RequiredArgsConstructor;
