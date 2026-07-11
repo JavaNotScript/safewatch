@@ -7,7 +7,6 @@ import com.safewatch.community.internal.domain.CommunityStatus;
 import com.safewatch.community.internal.domain.CommunityVisibility;
 import com.safewatch.community.internal.dto.CommunityDTO;
 import com.safewatch.community.internal.repo.CommunityRepository;
-import com.safewatch.community.internal.util.CreateResponse;
 import com.safewatch.common.exceptions.CommunityException;
 import com.safewatch.community.internal.util.CreateRequest;
 import lombok.RequiredArgsConstructor;

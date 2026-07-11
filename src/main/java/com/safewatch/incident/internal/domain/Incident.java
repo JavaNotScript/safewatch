@@ -1,0 +1,86 @@
+package com.safewatch.incident.internal.domain;
+
+import com.safewatch.common.domain.IncidentCategory;
+import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import org.hibernate.annotations.UpdateTimestamp;
+
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+
+@Entity
+@Getter
+@Setter
+@AllArgsConstructor
+@NoArgsConstructor
+@Table(name = "incident")
+public class Incident {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(nullable = false, name = "incident_id")
+    private Long incidentId;
+
+    @Column(nullable = false, name = "title")
+    private String title;
+
+    @Column(nullable = false, name = "description")
+    private String description;
+
+    @Column(nullable = false, name = "location")
+    private String location;
+
+    @Column(name = "longitude",nullable = false)
+    private double longitude;
+
+    @Column(name = "latitude",nullable = false)
+    private double latitude;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "severity")
+    private Severity severity;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "incident_category")
+    private IncidentCategory incidentCategory;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Status status;
+
+    @Column(name = "reported_at")
+    private LocalDateTime reportedAt;
+
+    @UpdateTimestamp
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
+    @Version
+    @Column(nullable = false)
+    private long version;
+
+    @Column(name = "reviewed_at")
+    private LocalDateTime reviewedAt;
+
+    @Column(name = "reported_by")
+    private Long reportedBy;
+
+    @Column(name = "reviewed_by")
+    private Long reviewedBy;
+
+    @Column(name = "review_comment", length = 500)
+    private String reviewComment;
+
+    @Column(name = "deleted_at")
+    private OffsetDateTime deletedAt;
+
+    @Column(name = "deleted_reason")
+    private String deletedReason;
+
+    @Column(name = "deleted_by")
+    private Long deletedBy;
+
+}

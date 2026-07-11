@@ -62,7 +62,7 @@ public class AuthController {
                 .map(v -> v.split(",")[0].trim())
                 .orElse(servletRequest.getRemoteAddr());
 
-        var result = authService.login(request.email(), request.password(), user.getUserId(), userAgent, ip);
+        var result = authService.login(request.email(), request.password(), user.userId(), userAgent, ip);
 
         ResponseCookie cookie = ResponseCookie.from("refreshToken", result.refreshToken())
                 .httpOnly(true)
